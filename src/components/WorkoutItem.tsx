@@ -3,48 +3,29 @@ import { Check } from "lucide-react";
 import { Capacitor } from "@capacitor/core";
 import { Haptics, ImpactStyle } from "@capacitor/haptics";
 
-// Satisfying checkbox tick sound
-const playTickSound = () => {
+// Bubble pop sound
+const playBubblePop = () => {
   const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
   
-  // Soft pop
-  const popOsc = audioContext.createOscillator();
-  const popGain = audioContext.createGain();
-  const popFilter = audioContext.createBiquadFilter();
+  // Main bubble pop
+  const osc = audioContext.createOscillator();
+  const gain = audioContext.createGain();
   
-  popOsc.type = 'sine';
-  popFilter.type = 'lowpass';
-  popFilter.frequency.value = 600;
+  osc.type = 'sine';
+  osc.connect(gain);
+  gain.connect(audioContext.destination);
   
-  popOsc.connect(popFilter);
-  popFilter.connect(popGain);
-  popGain.connect(audioContext.destination);
+  // High to low pitch sweep = bubble pop
+  osc.frequency.setValueAtTime(600, audioContext.currentTime);
+  osc.frequency.exponentialRampToValueAtTime(150, audioContext.currentTime + 0.1);
   
-  popOsc.frequency.setValueAtTime(500, audioContext.currentTime);
-  popOsc.frequency.exponentialRampToValueAtTime(200, audioContext.currentTime + 0.06);
+  // Quick pop envelope
+  gain.gain.setValueAtTime(0, audioContext.currentTime);
+  gain.gain.linearRampToValueAtTime(0.25, audioContext.currentTime + 0.01);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.12);
   
-  popGain.gain.setValueAtTime(0.15, audioContext.currentTime);
-  popGain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.1);
-  
-  popOsc.start(audioContext.currentTime);
-  popOsc.stop(audioContext.currentTime + 0.1);
-  
-  // Confirmation ding
-  const dingOsc = audioContext.createOscillator();
-  const dingGain = audioContext.createGain();
-  
-  dingOsc.type = 'sine';
-  dingOsc.connect(dingGain);
-  dingGain.connect(audioContext.destination);
-  
-  dingOsc.frequency.setValueAtTime(880, audioContext.currentTime + 0.02);
-  dingOsc.frequency.setValueAtTime(1100, audioContext.currentTime + 0.04);
-  
-  dingGain.gain.setValueAtTime(0.08, audioContext.currentTime + 0.02);
-  dingGain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.15);
-  
-  dingOsc.start(audioContext.currentTime + 0.02);
-  dingOsc.stop(audioContext.currentTime + 0.15);
+  osc.start(audioContext.currentTime);
+  osc.stop(audioContext.currentTime + 0.12);
 };
 
 // Haptic feedback for native
@@ -78,7 +59,7 @@ const WorkoutItem = ({
 
   const handleToggle = () => {
     setIsAnimating(true);
-    playTickSound();
+    playBubblePop();
     triggerHaptic();
     onToggle();
     setTimeout(() => setIsAnimating(false), 200);
