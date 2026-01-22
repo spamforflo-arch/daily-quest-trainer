@@ -13,33 +13,19 @@ const Index = () => {
   }, []);
   const [showCalendar, setShowCalendar] = useState(false);
   const [showWalkingModal, setShowWalkingModal] = useState(false);
-  const [questMessage, setQuestMessage] = useState("[Daily Quest: Strength Training has arrived.]");
   
   const { todayData, toggleWorkout, setWalkingDuration, getCompletedDays } = useWorkoutData();
-
-  const handleQuestClick = () => {
-    // Cycle through motivational messages
-    const messages = [
-      "[Daily Quest: Strength Training has arrived.]",
-      "[Quest Active: Complete your workout to level up!]",
-      "[Remember: Every rep counts towards your goals.]",
-      "[Today's Mission: Push your limits!]",
-    ];
-    const currentIndex = messages.indexOf(questMessage);
-    const nextIndex = (currentIndex + 1) % messages.length;
-    setQuestMessage(messages[nextIndex]);
-  };
 
   return (
     <div className="min-h-screen px-4 py-6 pb-8 max-w-md mx-auto">
       {/* Quest Info */}
       <div className="mb-4">
-        <QuestInfo onClick={handleQuestClick} />
+        <QuestInfo onClick={() => {}} />
       </div>
 
       {/* Quest Message */}
       <p className="text-foreground/90 text-base mb-8 leading-relaxed">
-        {questMessage}
+        [Daily Quest: Strength Training has arrived.]
       </p>
 
       {/* Goal Header */}
@@ -87,8 +73,6 @@ const Index = () => {
           isCompleted={todayData.walking}
           onToggle={() => toggleWorkout('walking')}
           onLongPress={() => setShowWalkingModal(true)}
-          showDuration={true}
-          duration={todayData.walkingDuration}
         />
       </div>
 

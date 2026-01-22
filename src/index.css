@@ -33,7 +33,7 @@
     --input: 180 20% 28%;
     --ring: 180 30% 50%;
 
-    --radius: 1rem;
+    --radius: 0.5rem;
 
     /* Custom design tokens */
     --gradient-bg: linear-gradient(180deg, hsl(180 30% 14%) 0%, hsl(180 25% 18%) 100%);
@@ -65,7 +65,7 @@
 
 @layer components {
   .quest-card {
-    @apply rounded-2xl border border-border/50 px-5 py-3 transition-all duration-200;
+    @apply rounded-lg border border-border/50 px-5 py-3 transition-all duration-200;
     background: linear-gradient(135deg, hsl(180 25% 22%) 0%, hsl(180 25% 18%) 100%);
     box-shadow: var(--card-glow);
   }
@@ -76,7 +76,7 @@
   }
 
   .workout-card {
-    @apply rounded-2xl border border-border/40 px-6 py-5 transition-all duration-150;
+    @apply rounded-lg border border-border/40 px-6 py-5 transition-all duration-150;
     background: linear-gradient(145deg, hsl(180 22% 20%) 0%, hsl(180 22% 17%) 100%);
     box-shadow: var(--card-glow);
   }
@@ -86,7 +86,7 @@
   }
 
   .calendar-card {
-    @apply rounded-3xl border border-border/30 p-6;
+    @apply rounded-xl border border-border/30 p-6;
     background: linear-gradient(160deg, hsl(180 22% 19%) 0%, hsl(180 22% 16%) 100%);
     box-shadow: var(--card-glow);
   }
@@ -121,7 +121,7 @@
   }
 
   .custom-checkbox {
-    @apply rounded-lg border-2 border-border/60 transition-all duration-200;
+    @apply rounded-md border-2 border-border/60 transition-all duration-200;
     width: var(--checkbox-size);
     height: var(--checkbox-size);
     background: transparent;
@@ -138,7 +138,7 @@
   }
 
   .modal-content {
-    @apply rounded-3xl border border-border/40 p-6 mx-4 w-full max-w-sm;
+    @apply rounded-xl border border-border/40 p-6 mx-4 w-full max-w-sm;
     background: linear-gradient(160deg, hsl(180 22% 18%) 0%, hsl(180 22% 14%) 100%);
     box-shadow: 0 8px 40px hsla(180, 40%, 10%, 0.8);
   }
