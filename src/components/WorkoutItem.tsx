@@ -1,42 +1,61 @@
 import { useState, useRef } from "react";
 import { Check } from "lucide-react";
+import { Capacitor } from "@capacitor/core";
+import { Haptics, ImpactStyle } from "@capacitor/haptics";
 
-// Checkbox tick sound
+// Satisfying checkbox tick sound
 const playTickSound = () => {
   const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
   
-  // Sharp tick
-  const tickOsc = audioContext.createOscillator();
-  const tickGain = audioContext.createGain();
+  // Soft pop
+  const popOsc = audioContext.createOscillator();
+  const popGain = audioContext.createGain();
+  const popFilter = audioContext.createBiquadFilter();
   
-  tickOsc.type = 'sine';
-  tickOsc.connect(tickGain);
-  tickGain.connect(audioContext.destination);
+  popOsc.type = 'sine';
+  popFilter.type = 'lowpass';
+  popFilter.frequency.value = 600;
   
-  tickOsc.frequency.setValueAtTime(1800, audioContext.currentTime);
-  tickOsc.frequency.exponentialRampToValueAtTime(1200, audioContext.currentTime + 0.04);
+  popOsc.connect(popFilter);
+  popFilter.connect(popGain);
+  popGain.connect(audioContext.destination);
   
-  tickGain.gain.setValueAtTime(0.12, audioContext.currentTime);
-  tickGain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.08);
+  popOsc.frequency.setValueAtTime(500, audioContext.currentTime);
+  popOsc.frequency.exponentialRampToValueAtTime(200, audioContext.currentTime + 0.06);
   
-  tickOsc.start(audioContext.currentTime);
-  tickOsc.stop(audioContext.currentTime + 0.08);
+  popGain.gain.setValueAtTime(0.15, audioContext.currentTime);
+  popGain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.1);
   
-  // Soft confirmation tone
-  const confirmOsc = audioContext.createOscillator();
-  const confirmGain = audioContext.createGain();
+  popOsc.start(audioContext.currentTime);
+  popOsc.stop(audioContext.currentTime + 0.1);
   
-  confirmOsc.type = 'sine';
-  confirmOsc.connect(confirmGain);
-  confirmGain.connect(audioContext.destination);
+  // Confirmation ding
+  const dingOsc = audioContext.createOscillator();
+  const dingGain = audioContext.createGain();
   
-  confirmOsc.frequency.setValueAtTime(600, audioContext.currentTime + 0.02);
+  dingOsc.type = 'sine';
+  dingOsc.connect(dingGain);
+  dingGain.connect(audioContext.destination);
   
-  confirmGain.gain.setValueAtTime(0.06, audioContext.currentTime + 0.02);
-  confirmGain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.1);
+  dingOsc.frequency.setValueAtTime(880, audioContext.currentTime + 0.02);
+  dingOsc.frequency.setValueAtTime(1100, audioContext.currentTime + 0.04);
   
-  confirmOsc.start(audioContext.currentTime + 0.02);
-  confirmOsc.stop(audioContext.currentTime + 0.1);
+  dingGain.gain.setValueAtTime(0.08, audioContext.currentTime + 0.02);
+  dingGain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.15);
+  
+  dingOsc.start(audioContext.currentTime + 0.02);
+  dingOsc.stop(audioContext.currentTime + 0.15);
+};
+
+// Haptic feedback for native
+const triggerHaptic = async () => {
+  if (Capacitor.isNativePlatform()) {
+    try {
+      await Haptics.impact({ style: ImpactStyle.Medium });
+    } catch (e) {
+      console.log('Haptics not available');
+    }
+  }
 };
 
 interface WorkoutItemProps {
@@ -53,44 +72,77 @@ const WorkoutItem = ({
   onLongPress,
 }: WorkoutItemProps) => {
   const [isAnimating, setIsAnimating] = useState(false);
-  const longPressTimer = useRef<NodeJS.Timeout | null>(null);
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isLongPress = useRef(false);
+  const touchStartPos = useRef({ x: 0, y: 0 });
 
-  const handleClick = () => {
-    if (isLongPress.current) {
-      isLongPress.current = false;
-      return;
-    }
+  const handleToggle = () => {
     setIsAnimating(true);
     playTickSound();
+    triggerHaptic();
     onToggle();
     setTimeout(() => setIsAnimating(false), 200);
   };
 
-  const handleTouchStart = () => {
+  const handleTouchStart = (e: React.TouchEvent) => {
     isLongPress.current = false;
+    touchStartPos.current = {
+      x: e.touches[0].clientX,
+      y: e.touches[0].clientY,
+    };
+    
     if (onLongPress) {
       longPressTimer.current = setTimeout(() => {
         isLongPress.current = true;
+        triggerHaptic();
         onLongPress();
       }, 500);
     }
   };
 
-  const handleTouchEnd = () => {
+  const handleTouchMove = (e: React.TouchEvent) => {
+    // Cancel long press if user moves finger
+    const moveThreshold = 10;
+    const deltaX = Math.abs(e.touches[0].clientX - touchStartPos.current.x);
+    const deltaY = Math.abs(e.touches[0].clientY - touchStartPos.current.y);
+    
+    if (deltaX > moveThreshold || deltaY > moveThreshold) {
+      if (longPressTimer.current) {
+        clearTimeout(longPressTimer.current);
+        longPressTimer.current = null;
+      }
+    }
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
     if (longPressTimer.current) {
       clearTimeout(longPressTimer.current);
       longPressTimer.current = null;
+    }
+    
+    // Only toggle if it wasn't a long press
+    if (!isLongPress.current) {
+      handleToggle();
+    }
+    
+    // Prevent click event
+    e.preventDefault();
+  };
+
+  const handleClick = (e: React.MouseEvent) => {
+    // Only handle click for mouse users (not touch)
+    if (e.detail > 0) {
+      handleToggle();
     }
   };
 
   return (
     <div 
-      className="workout-card flex items-center justify-between"
+      className="workout-card flex items-center justify-between cursor-pointer"
       onClick={handleClick}
       onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
-      onTouchCancel={handleTouchEnd}
     >
       <span className="text-xl font-semibold text-foreground">{name}</span>
       <div 
